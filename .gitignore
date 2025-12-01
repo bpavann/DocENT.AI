@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+/images
+.images
+images/
 data/*.pdf
 data/*.docx
 data/*.txt
