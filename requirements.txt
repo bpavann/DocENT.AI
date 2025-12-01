@@ -19,6 +19,7 @@ pypdf
 pdfdocument
 pymupdf 
 docx2txt 
+html2text
 deepagents
 jq
 sentence_transformers

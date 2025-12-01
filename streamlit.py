@@ -8,8 +8,8 @@ import uuid
 from deep_agent import DeepAgent, SubAgentType
 
 st.set_page_config(
-    page_title="DeepAgent Analyzer",
-    page_icon="🤖",
+    page_title="DocENT.AI",
+    page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -116,28 +116,29 @@ if "current_result" not in st.session_state:
     st.session_state.current_result = None
 
 # --- TITLE & INTRO ---
-st.markdown("<div class='big-title'>🤖 Docent AI</div>", unsafe_allow_html=True)
 st.markdown("""
-<div class='center-text'>
-🧠 DocENT.AI is a smart document-aware AI system that uses embeddings, FAISS retrieval, and LLM reasoning to deliver accurate, structured answers. 
-Simply enter your query below — the agent performs semantic search, analyzes context, and generates a clear response.
+<h1 style='text-align: center;'>🤖 DocENT AI</h1>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style='text-align: center; font-size: 17px;'>
+🧠 DocENT.AI helps you explore and understand your Social Network and Big Data Analytics content by analyzing your documents and generating clear, context-aware answers to your queries.
 </div>
 """, unsafe_allow_html=True)
 st.divider()
 st.markdown("""
-You will receive a polished output including:  
-- 📝 Main Answer  
-- 📚 Evidence & Context  
-- 📑 Optional Tables / Highlights  
-- 🔁 Brief Execution Summary  
+### 🔍 System Output Includes
+- **Clear, structured response**
+- **Relevant context extracted from your documents**
+- **Optional tables or highlighted insights**
+- **Execution summary for transparency**
 
-Debug information such as raw agent output, retrieval logs, and sub-agent traces is available at the end for full transparency.
+*Debug information (agent output, retrieval logs, sub-agent traces) is available at the end.*
 """)
-st.divider()
 # --- USER QUERY INPUT ---
 user_query = st.text_area(
-    "Enter your analysis query:",
-    placeholder="e.g., Summarize about Attention all you need in transformers.. ?",
+    "Enter your query:",
+    placeholder="e.g., Summarize about social network and big data analytics ?",
     height=100,
     key="user_query_input"
 )

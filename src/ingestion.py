@@ -1,5 +1,7 @@
 from pathlib import Path
+import html2text
 from typing import List, Any
+from langchain_core.documents import Document
 from langchain_community.document_loaders import Docx2txtLoader
 from langchain_community.document_loaders.excel import UnstructuredExcelLoader
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, CSVLoader
@@ -83,6 +85,26 @@ class IngestionAgent:
                 documents.extend(loaded)
             except Exception as e:
                 print(f"[ERROR] Failed to load TXT {txt_file}: {e}")
+        
+        # HTML files
+        html_files = list(data_path.glob('**/*.html'))
+        print(f"Status: Found {len(html_files)} HTML files: {[str(f) for f in html_files]}")
+        html = html2text.HTML2Text()
+        html.ignore_links = False
+        for html_file in html_files:
+            print(f"Status: Loading HTML: {html_file}")
+            try:
+                with open(html_file, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                text = html.handle(html_content)
+                doc = Document(page_content=text, metadata={"source": str(html_file)})
+                documents.append(doc)
+                print(f"Status: Loaded {len(loaded)} characters from {html_file}")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to load HTML {text}: {e}")
+                
+
 
         
         print(f"Status: Total loaded documents: {len(documents)}")
