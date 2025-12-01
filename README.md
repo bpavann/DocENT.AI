@@ -3,7 +3,7 @@
 ## Project Overview
 **DocENT.AI** is an agentic AI platform that ingests and analyzes multiple document formats (PDF, DOCX, CSV, HTML, PPT, PPTX) to generate actionable insights, summaries, or structured responses. The system uses a modular architecture and local LLMs to provide a flexible, privacy-focused, and scalable solution for document intelligence.
 
-![DocentAI](/Users/pavankumarb/Documents/My Learning/DocENTmcp/images/IMG_7409.JPG)
+![DocentAI](https://github.com/bpavann/DocENT.AI/blob/main/images/IMG_7409.JPG)
 
 ## Key Features
 - **Multi-Format Document Ingestion:** Supports PDFs, DOCX, CSV, HTML, TEXT, and other formats. 
@@ -78,4 +78,4 @@ streamlit run streamlit_app.py
 - **FAISS** – Vector-based semantic document search.
 
 ## UI Interface
-![UIInterface](/Users/pavankumarb/Documents/My Learning/DocENTmcp/images/UI_Interface.gif)
+![UIInterface](https://github.com/bpavann/DocENT.AI/blob/main/images/UI_Interface.gif)
