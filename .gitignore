@@ -9,7 +9,7 @@ data/*.txt
 data/*.csv
 data/
 src/faiss_vector/
-
+faiss_store/
 /.env
 .env
 /.venv

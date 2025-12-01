@@ -1,4 +1,5 @@
 import os
+from typing import List
 from langchain_ollama import ChatOllama
 try:
     from src.ingestion import IngestionAgent
@@ -14,7 +15,7 @@ except ImportError:
     from src.ingestion import IngestionAgent
 
 
-class SummaryAgent:
+class ReportAgent:
     def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2",  llm_model: str ='llama3.1'):
         self.vectorstore = FaissVectorStore(persist_dir, embedding_model)
         faiss_path = os.path.join(persist_dir, "faiss.index")
@@ -28,36 +29,41 @@ class SummaryAgent:
         self.llm = ChatOllama(model=llm_model)
         print(f"Status Ollama LLM initialized: {self.llm}")
 
-    def summarize(self, query: str, top_k: int = 5) -> str:
-        results = self.vectorstore.query(query, top_k=top_k)
+    def generate_report(self, texts: List[str], top_k: int = 5) -> str:
+        results = self.vectorstore.query(texts, top_k=top_k)
         texts = [r["metadata"].get("text", "") for r in results if r["metadata"]]
         context = "\n\n".join(texts)
         if not context:
             return "No relevant documents found."
         prompt=f"""
-            You are a highly intelligent document analysis agent.
-            Read the retrieved content carefully and generate a clear, accurate, and context-aware executive summary.
- 
-            Make sure your summary dominates the critical points and is concise yet thorough.
-            Your summary must highlight:
-            - Key insights
-            - Major themes or events
-            - Important decisions or outcomes
-            - Any notable trends, issues, or anomalies
-            - Actionable takeaways (if present)
-            Use only the details from the FAISS-retrieved context. Do not add assumptions.
-            Query: '{query}'
-            Context:
-            {context}
+        You are an expert report-writing agent. 
+        Your job is to generate a professional, polished, multi-section report from provided documents.
+        Make the report actionable, deeply insightful, and formatted cleanly.
 
-            Produce a concise, well-structured executive summary.
+        The report MUST follow this structure:
+
+        1. Executive Summary  
+        2. Key Insights & Findings  
+        3. STAR Analysis (Situation, Task, Action, Result)  
+        4. Comparative Observations (if multiple docs)  
+        5. Extracted Data Tables (if any)  
+        6. Risks & Mitigation Strategy  
+        7. Recommendations  
+        8. Final Conclusion 
+
+        Use only the details from the FAISS-retrieved context. Do not add assumptions.
+            Query: '{texts}'
+            Context:
+            {context} 
+
+        Be thorough, accurate, and ensure the report reads like a high-quality consulting deliverable.
         """
         response = self.llm.invoke([prompt])
         return response.content if hasattr(response, "content") else str(response)
 
 # Example usage
 if __name__ == "__main__":
-    sa = SummaryAgent()
+    sa = ReportAgent()
     text = "I want to develop and end to end project on Agentic AI "
     print("\n\n")
-    print("Summary:\n", sa.summarize(text))
+    print("STAR :\n", sa.generate_report(text))

@@ -1,10 +1,10 @@
 import os
 from langchain_ollama import ChatOllama
-from langchain_core.messages import SystemMessage
 
 # Handle imports for both module and direct execution
 try:
     from src.ingestion import IngestionAgent
+    from src.vectordb import FaissVectorStore
 except ImportError:
     # Fallback for direct execution
     import sys
@@ -15,16 +15,8 @@ except ImportError:
     from src.vectordb import FaissVectorStore
     from src.ingestion import IngestionAgent
 
-QAPROMPT=SystemMessage("""
-            * You are a highly capable question-answering agent. 
-            * Use the document context to answer the user query accurately. 
-            * If the information is not directly available, provide reasoned speculation based on document patterns and domain knowledge. 
-            * Always ensure answers are actionable, precise, and reflect the dominant information in the text.
-"""    
-)
-
 class QAAgent:
-    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2", llm_model: str = "gemma2-9b-it"):
+    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2",  llm_model: str ='llama3.1'):
         self.vectorstore = FaissVectorStore(persist_dir, embedding_model)
         faiss_path = os.path.join(persist_dir, "faiss.index")
         meta_path = os.path.join(persist_dir, "metadata.pkl")
@@ -34,7 +26,7 @@ class QAAgent:
             self.vectorstore.build_from_documents(docs)
         else:
             self.vectorstore.load()
-        self.llm = ChatOllama(model="llama3.1")
+        self.llm = ChatOllama(model=llm_model)
         print(f"Status Ollama LLM initialized: {self.llm}")
 
     def search_and_summarize(self, query: str, top_k: int = 5) -> str:
@@ -43,7 +35,22 @@ class QAAgent:
         context = "\n\n".join(texts)
         if not context:
             return "No relevant documents found."
-        prompt = f""" {QAPROMPT}\n\n Summarize the following context for the query: '{query}'\n\nContext:\n{context}\n\nSummary:"""
+        prompt = f"""
+            You are an advanced question-answering agent.
+            Use the provided document context to answer the user query with accuracy and clarity.
+
+            Rules:
+            - Base your answer strictly on the information available in the context.
+            - If the answer is not explicitly stated, provide a reasonable inference only if it aligns with patterns or facts in the document.
+            - Keep the answer precise, actionable, and directly relevant to the query and No Assumptions
+
+            User Query: '{query}'
+
+            Context:
+            {context}
+
+            Provide the final answer below:
+            """
         response = self.llm.invoke([prompt])
         return response.content
 
@@ -51,7 +58,7 @@ class QAAgent:
 if __name__ == "__main__":
 
     rag_search = QAAgent()
-    query = "Explain about model context protocol in 5 points ?"
+    query = "Explain about model context protocol?"
     summary = rag_search.search_and_summarize(query, top_k=3)
     print("Summary:", summary)
     

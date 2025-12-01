@@ -13,10 +13,13 @@ bs4
 pypdf
 langchain-mcp-adapters
 faiss-cpu
+arxiv
+wikipedia
 pypdf 
 pdfdocument
 pymupdf 
 docx2txt 
+deepagents
 jq
 sentence_transformers
 fastapi
