@@ -1,81 +1,448 @@
 # DocENT.AI
 
 ## Project Overview
-**DocENT.AI** is an agentic AI platform that ingests and analyzes multiple document formats (PDF, DOCX, CSV, HTML, PPT, PPTX) to generate actionable insights, summaries, or structured responses. The system uses a modular architecture and local LLMs to provide a flexible, privacy-focused, and scalable solution for document intelligence.
 
-![DocentAI](https://github.com/bpavann/DocENT.AI/blob/main/images/IMG_7409.JPG)
+**DocENT.AI** is an agentic document intelligence application designed to ingest and analyze academic documents and provide grounded answers, summaries, structured information, STAR-format responses, and reports.
+
+The application uses **LangGraph-based agent orchestration**, **FAISS semantic search**, and **LLM-powered specialized agents** to determine the appropriate processing workflow for each user request.
+
+The current knowledge base is primarily focused on:
+
+* Social Network
+* Social Network Analysis
+* Big Data
+* Big Data Analysis
+* Big Data Analytics
+
+DocENT.AI is designed with a modular architecture where a planner determines the user's intent and routes the request to the appropriate specialized agent.
+
+![DocENTAI](https://github.com/bpavann/DocENT.AI/blob/main/images/IMG_7409.JPG)
+
+---
 
 ## Key Features
-- **Multi-Format Document Ingestion:** Supports PDFs, DOCX, CSV, HTML, TEXT, and other formats. 
-- **RAG QA & Summarization:** Query documents using semantic search and receive precise answers or summaries.
-- **Structured Insights:** Extract actionable data, metrics, or STAR-format analysis.   
-- **Report Generation:** Aggregate subagent outputs into detailed reports.  
-- **GROQ LLM:** Groq llm integrated with deep_agent.py main file
-- **Local LLM Integration:** Uses Ollama or Groq models for secure, cloud-free inference. 
-- **Monitoring & Logging:** Track workflows, agent execution, and debugging info in real-time. 
-- **Interactive UI:** Streamlit-based interface for queries, visualization, Status Indicators and Debug Info.   
+
+* **Multi-Format Document Ingestion:** Supports PDF, DOCX, CSV, HTML, TXT, PPT/PPTX, and other supported document formats.
+
+* **RAG-Based Question Answering:** Retrieves relevant document chunks from the FAISS vector store and generates answers grounded in the retrieved content.
+
+* **Intelligent Agent Routing:** A Planner Agent analyzes the user's request and selects the appropriate specialized agent.
+
+* **Conversational Agent:** Handles normal conversation and general interactions that do not require document retrieval.
+
+* **Summary Agent:** Generates concise summaries and overviews from document content.
+
+* **STAR Agent:** Produces Situation, Task, Action, and Result formatted responses based on relevant information.
+
+* **Extraction Agent:** Extracts structured information such as tables, metrics, numbers, names, and other requested data.
+
+* **Report Agent:** Generates detailed reports based on document information and agent results.
+
+* **Local LLM Integration:** Uses Ollama for local LLM inference, providing a privacy-focused development workflow.
+
+* **FAISS Semantic Search:** Uses vector embeddings and FAISS for efficient document retrieval.
+
+* **Interactive Streamlit UI:** Provides a chat interface with conversation history, retrieved document context, and agent information.
+
+* **Conversation History:** Supports multiple chat threads with the ability to create, switch between, and delete conversations.
+
+---
 
 ## Technology Stack
- - **Core Language:** Python 3.x
-- **LLM & Agent Orchestration:** LangChain, LangChain-Ollama, LangChain-Groq, LangGraph and deep_agents.
-- **Vector Search:** FAISS (CPU) for document embeddings and semantic search
-- **Document Processing:** FPDF2, PyMuPDF, docx2txt, PyPDF, BeautifulSoup4
-- **Embeddings:** Sentence Transformers for semantic search
-- **Web Interface:** Streamlit for interactive queries
-- **Environment & Packaging:** UltraViolet (UV)
+
+* **Core Language:** Python 3.x
+
+* **LLM & Agent Orchestration:** LangChain, LangChain-Ollama, LangGraph
+
+* **LLM:** Ollama with locally hosted models such as `llama3.1`
+
+* **Vector Search:** FAISS (CPU)
+
+* **Embeddings:** Sentence Transformers (`all-MiniLM-L6-v2`)
+
+* **Document Processing:** PyPDF, pdfplumber, BeautifulSoup4, python-docx, and other document-processing libraries
+
+* **Web Interface:** Streamlit
+
+* **Environment & Packaging:** uv / Python virtual environment
+
+---
+
+## Architecture
+
+DocENT.AI follows a simple agent-as-node architecture:
+
+```text
+                    ┌──────────────────┐
+                    │   Streamlit UI   │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    DeepAgent     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   Planner Agent  │
+                    │                  │
+                    │ Understands user │
+                    │     intent       │
+                    └────────┬─────────┘
+                             │
+                       LangGraph Route
+                             │
+          ┌──────────┬───────┼────────┬──────────┬──────────┐
+          ▼          ▼       ▼        ▼          ▼          ▼
+     Conversational  QA   Summary    STAR    Extraction   Report
+          │          │       │        │          │          │
+          └──────────┴───────┴────────┴──────────┴──────────┘
+                             │
+                             ▼
+                       State / Result
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   Streamlit UI   │
+                    └──────────────────┘
+```
+
+Each specialized agent receives the **DeepAgentState**, performs its task, and returns a state update to LangGraph.
+
+---
+
+## Agents
+
+### Planner Agent
+
+The Planner Agent acts as the routing controller for DocENT.AI.
+
+It analyzes the user's request and selects exactly one route:
+
+```text
+conversational
+qa
+summary
+star
+extraction
+report
+```
+
+The selected route is stored in the LangGraph state and used to determine which agent executes next.
+
+### Conversational Agent
+
+Handles normal conversation that does not require information from the uploaded document knowledge base.
+
+Examples:
+
+```text
+Hi
+Hello
+How are you?
+Who are you?
+What can you do?
+```
+
+### QA Agent
+
+Handles questions requiring information from the uploaded documents.
+
+The QA workflow is:
+
+```text
+User Query
+    ↓
+FAISS Vector Search
+    ↓
+Retrieve Relevant Chunks
+    ↓
+Build Context
+    ↓
+Ollama LLM
+    ↓
+Grounded Answer
+```
+
+Retrieved document chunks are also returned to the UI so the user can inspect the supporting context.
+
+### Summary Agent
+
+Handles requests such as:
+
+```text
+Summarize this document
+Give me the key points
+Provide an overview
+Summarize Big Data Analytics
+```
+
+### STAR Agent
+
+Handles requests that explicitly require a:
+
+```text
+Situation
+Task
+Action
+Result
+```
+
+formatted response.
+
+### Extraction Agent
+
+Handles structured extraction requests such as:
+
+```text
+Extract the numbers
+Extract the metrics
+Extract the names
+Extract the table
+Extract the structured information
+```
+
+### Report Agent
+
+Handles requests for detailed or formal reports based on the available document information.
+
+---
+
+## Document Retrieval
+
+DocENT.AI uses **FAISS** for semantic document retrieval.
+
+The document pipeline is:
+
+```text
+Documents
+    ↓
+Document Ingestion
+    ↓
+Text Processing
+    ↓
+Chunking
+    ↓
+Sentence Transformer Embeddings
+    ↓
+FAISS Vector Store
+    ↓
+Semantic Search
+    ↓
+Relevant Document Chunks
+```
+
+The QA Agent uses the retrieved chunks as the primary source of information when answering document-based questions.
+
+---
+
+## State Management
+
+The DeepAgent workflow uses a shared `DeepAgentState` containing information such as:
+
+```text
+messages
+user_query
+documents
+route
+agent_result
+```
+
+The general execution flow is:
+
+```text
+User Query
+    ↓
+DeepAgentState
+    ↓
+Planner Agent
+    ↓
+Route Selection
+    ↓
+Specialized Agent
+    ↓
+State Update
+    ↓
+Final Result
+```
+
+This keeps the workflow simple while allowing each agent to operate as a LangGraph node.
+
+---
 
 ## Usage
-### 1️⃣ Installation
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
 
-# Install dependencies
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/bpavann/DocENT.AI.git
+cd DocENT.AI
+```
+
+### 2️⃣ Create Virtual Environment
+
+Using Python:
+
+```bash
+python -m venv .venv
+```
+
+Activate on macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Activate on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+### 3️⃣ Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
-2️⃣ Start Streamlit UI
+
+If using `uv`:
+
 ```bash
-streamlit run streamlit_app.py
-``` 
+uv sync
+```
+
+### 4️⃣ Install and Start Ollama
+
+Make sure Ollama is installed and the required model is available.
+
+For example:
+
+```bash
+ollama pull llama3.1
+```
+
+### 5️⃣ Start the Streamlit Application
+
+```bash
+streamlit run stream_app.py
+```
+
+---
 
 ## Project Structure
-- `src/agents/` – QA, Summary, Extraction, STAR.
-- `src/vectordb/` – Faiss vector store for RAG workflows (Ingestion-Embedding-VectorDB done manually from data)  
-- `data/` - All types of required documents. 
-- `deep_agent.py` – Core DeepAgent orchestration logic
-- `streamlit_app.py` – Streamlit UI frontend 
 
-## Workflow 
-1. Query Input: User submits a query via the Streamlit UI.
-2. Document Retrieval: QA subagent fetches relevant documents from FAISS vector store.
-3. Query Analysis: DeepAgent analyzes the query to determine which subagents to invoke:
-  * QA Agent: Answer direct questions using retrieved documents.
-  * Summary Agent: Generate concise summaries or overviews.
-  * STAR Agent: Perform Situation-Task-Action-Result analysis for business/event context.
-  * Extraction Agent: Extract structured tables, metrics, and key information.
-  * Report Agent: Aggregate all subagent outputs into a final report.
-4. Subagent Execution: Only required subagents are run; skipped agents are tracked.
-5. Result Aggregation: Outputs are collected, displayed in Streamlit with:
-  * Status badges (completed/skipped/error)
-  * Expandable sections for subagent outputs
-  * Debug info including raw messages and workflow logs
-6. Final Report: Optionally generated if report subagent is invoked.
+```text
+DocENT.AI/
+│
+├── data/
+│   └── Documents used for the knowledge base
+│
+├── images/
+│   ├── IMG_7409.JPG
+│   └── UI_Interface.gif
+│
+├── faiss_store/
+│   ├── faiss.index
+│   └── metadata.pkl
+│
+├── src/
+│   │
+│   ├── agents/
+│   │   ├── conv_agent.py
+│   │   ├── planner_agent.py
+│   │   ├── qa_agent.py
+│   │   ├── summary_agent.py
+│   │   ├── star_agent.py
+│   │   ├── extraction_agent.py
+│   │   └── report_agent.py
+│   │
+│   ├── deep_agent_docent/
+│   │   ├── state.py
+│   │   ├── graph.py
+│   │   └── dagents.py
+│   │
+│   └── ingestion_vector/
+│       ├── embedding.py
+│       ├── ingestion.py
+│       └── vectordb.py
+│
+├── stream_app.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Workflow
+
+1. **Query Input**
+
+   The user submits a request through the Streamlit interface.
+
+2. **State Creation**
+
+   The user query is stored in the `DeepAgentState`.
+
+3. **Planner Execution**
+
+   The Planner Agent analyzes the user's intent.
+
+4. **Dynamic Routing**
+
+   LangGraph routes the request to exactly one appropriate agent.
+
+5. **Agent Execution**
+
+   The selected agent performs the requested task.
+
+6. **Document Retrieval**
+
+   For document-grounded tasks such as QA, relevant chunks are retrieved from the FAISS vector store.
+
+7. **State Update**
+
+   The selected agent returns its result and any relevant retrieved documents to the shared state.
+
+8. **Result Display**
+
+   Streamlit displays the generated response and, when applicable, the retrieved document context.
+
+---
 
 ## Design Highlights
-- **Modular Agent Architecture:** Independent QA, Summary, STAR, Extraction, and Report agents. 
-- **Dynamic Subagent Routing:** Intelligent decision-making to run only relevant agents. 
-- **FAISS-Powered Retrieval:** Semantic document search for fast and accurate responses.
-- **Local AI Inference:** No cloud dependency for sensitive document processing. 
-- **Interactive UI:** Clean, expandable sections for results and debug logs and .
-- **Real-Time Monitoring:** Logs and workflow tracking for debugging and observability.  
 
-## Acknowledgements
-- **Groq / Ollama Local Models** – Core LLM inference engine for reasoning and summarization.
-- **LangChain,deep_agents & LangGraph** – Workflow orchestration and multi-agent management  
-- **Streamlit** – Frontend interface  
-- **FAISS** – Vector-based semantic document search.
+* **Modular Agent Architecture:** Independent agents handle conversation, QA, summarization, STAR responses, extraction, and report generation.
+* **Agent-as-Node Architecture:** Each agent directly integrates with the LangGraph workflow and receives the shared `DeepAgentState`.
+* **Dynamic Routing:** The Planner Agent determines the appropriate workflow based on user intent.
+* **FAISS-Powered Retrieval:** Semantic search retrieves relevant document chunks for grounded responses.
+* **Local LLM Inference:** Ollama enables local model inference without requiring every request to be sent to a cloud LLM.
+* **Grounded Responses:** Document-based QA uses retrieved document content as the source of truth
+* **Interactive UI:** Streamlit provides a simple chat interface with conversation history and retrieved document context.
+* **Conversation Management:** Users can create, switch between, and delete chat threads.
+
+---
 
 ## UI Interface
-![UIInterface](https://github.com/bpavann/DocENT.AI/blob/main/images/UI_Interface.gif)
+
+![DocENTAI UI](https://github.com/bpavann/DocENT.AI/blob/main/images/UI_Interface.gif)
+
+The Streamlit interface provides:
+* Chat-based document interaction
+* Multiple conversation threads
+* New Chat functionality
+* Clear Chat functionality
+* Conversation deletion
+* AI-generated responses
+* Retrieved document context
+* Expandable retrieved-document sections
+
+---
+
+## Acknowledgements
+* **Ollama** – Local LLM inference
+* **LangChain** – LLM and application framework
+* **LangGraph** – Agent workflow orchestration
+* **Streamlit** – Interactive web interface
+* **FAISS** – Vector-based semantic search
+* **Sentence Transformers** – Document embeddings
+* **PyPDF / pdfplumber / BeautifulSoup4** – Document processing

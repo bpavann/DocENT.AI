@@ -1,18 +1,9 @@
 import os
 from langchain_ollama import ChatOllama
-try:
-    from src.ingestion import IngestionAgent
-    from src.vectordb import FaissVectorStore
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    from pathlib import Path
-    project_root = Path(__file__).parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-    from src.vectordb import FaissVectorStore
-    from src.ingestion import IngestionAgent
-
+from langchain_core.messages import AIMessage
+from src.deep_agent_docent.state import DeepAgentState
+from src.ingestion_vector.ingestion import IngestionAgent
+from src.ingestion_vector.vectordb import FaissVectorStore
 
 class SummaryAgent:
     def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2",  llm_model: str ='llama3.1'):
@@ -28,8 +19,9 @@ class SummaryAgent:
         self.llm = ChatOllama(model=llm_model)
         print(f"Status Ollama LLM initialized: {self.llm}")
 
-    def summarize(self, query: str, top_k: int = 5) -> str:
-        results = self.vectorstore.query(query, top_k=top_k)
+    def run(self, state: DeepAgentState) -> dict:
+        query=state["user_query"]
+        results = self.vectorstore.query(query, top_k=5)
         texts = [r["metadata"].get("text", "") for r in results if r["metadata"]]
         context = "\n\n".join(texts)
         if not context:
@@ -53,11 +45,13 @@ class SummaryAgent:
             Produce a concise, well-structured executive summary.
         """
         response = self.llm.invoke([prompt])
-        return response.content if hasattr(response, "content") else str(response)
-
-# Example usage
-if __name__ == "__main__":
-    sa = SummaryAgent()
-    text = "I want to develop and end to end project on Agentic AI "
-    print("\n\n")
-    print("Summary:\n", sa.summarize(text))
+        retrieved_documents = []
+        for i, text in enumerate(texts, start=1):
+            retrieved_documents.append(
+                f"### Chunk {i}\n\n{text}\n\n"
+            )
+        return {
+            "agent_result": {"agent": "qa","result": response.content},
+            "documents": retrieved_documents,
+            "messages": [AIMessage(content=response.content)]
+        }

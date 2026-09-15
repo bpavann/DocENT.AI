@@ -4,20 +4,8 @@ import numpy as np
 import pickle
 from typing import List, Any
 from sentence_transformers import SentenceTransformer
-
-# Handle imports for both module and direct execution
-try:
-    from .embedding import Embedding
-    from .ingestion import IngestionAgent
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    from pathlib import Path
-    project_root = Path(__file__).parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-    from src.embedding import Embedding
-    from src.ingestion import IngestionAgent
+from src.ingestion_vector.embedding import Embedding
+from src.ingestion_vector.ingestion import IngestionAgent
 
 class FaissVectorStore:
     def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2", chunk_size: int = 1000, chunk_overlap: int = 200): 

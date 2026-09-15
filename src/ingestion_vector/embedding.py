@@ -1,19 +1,9 @@
-from typing import List, Any
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
 import numpy as np
-# Handle imports for both module and direct execution
-try:
-    from .ingestion import IngestionAgent
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    from pathlib import Path
-    project_root = Path(__file__).parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-    from src.ingestion import IngestionAgent
-
+from typing import List, Any
+from sentence_transformers import SentenceTransformer
+from src.ingestion_vector.ingestion import IngestionAgent
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+    
 class Embedding:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", chunk_size: int = 1000, chunk_overlap: int = 200):
         self.chunk_size = chunk_size
