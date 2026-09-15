@@ -2,12 +2,14 @@ from typing import Annotated, Sequence, TypedDict
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+def add_agent_results(existing: list[dict],new: list[dict]) -> list[dict]:
+    return existing + new
+
 class DeepAgentState(TypedDict):
-    """
-    Shared state that travels through the DeepAgent graph.
-    """
     messages: Annotated[Sequence[BaseMessage], add_messages]
     user_query: str
-    documents: str
-    route: str
-    agent_result: dict
+    retrieval_required: bool
+    documents: list[str]
+    plan: list[str]
+    current_step: int
+    agent_results: Annotated[list[dict], add_agent_results]

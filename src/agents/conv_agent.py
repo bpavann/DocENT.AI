@@ -291,6 +291,6 @@ class ConversationalAgent:
         response = self.llm.invoke([prompt])
         answer=response.content if hasattr(response, "content") else str(response)
         return {
-            "agent_result": {"agent": "qa","result": answer},
+            "agent_results": [{"agent": "conversational", "result": answer}],
             "messages": [AIMessage(content=answer)]
         }

@@ -64,8 +64,16 @@ class FaissVectorStore:
 
     def query(self, query_text: str, top_k: int = 5):
         print(f"[INFO] Querying vector store for: '{query_text}'")
+
+        print("[INFO] Starting query embedding...")
         query_emb = self.model.encode([query_text]).astype('float32')
-        return self.search(query_emb, top_k=top_k)
+        print("[INFO] Query embedding completed.")
+
+        print("[INFO] Starting FAISS search...")
+        results = self.search(query_emb, top_k=top_k)
+        print("[INFO] FAISS search completed.")
+
+        return results
 
 # Example usage
 if __name__ == "__main__":

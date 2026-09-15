@@ -46,6 +46,18 @@ st.markdown("""
     background-color: #f0f2f6;
 }
 
+.agent-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.agent-response {
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -153,18 +165,37 @@ if not st.session_state.messages:
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        if message["role"] == "user":
+            st.markdown(message["content"])
 
-        if message["role"] == "assistant":
-            documents = message.get("documents", "")
+        else:
+            agent_results = message.get("agent_results",[])
+
+            for agent_result in agent_results:
+                #agent_name = agent_result.get("agent","")
+                response = agent_result.get("result","")
+
+                if response:
+                    #st.markdown(
+                     #   f"<div class='agent-title'>{agent_name.upper()}</div>",
+                     #   unsafe_allow_html=True
+                    #)
+
+                    st.markdown(
+                        f"<div class='agent-response'>{response}</div>",
+                        unsafe_allow_html=True
+                    )
+
+            documents = message.get("documents",[])
 
             if documents:
                 with st.expander("📚 Retrieved Documents"):
-                    st.markdown(documents)
+                    if isinstance(documents, list):
+                        st.markdown("\n\n".join(documents))
+                    else:
+                        st.markdown(documents)
 
-user_query = st.chat_input(
-    "Ask DocENTAI anything about your documents..."
-)
+user_query = st.chat_input("Ask DocENTAI anything about your documents...")
 
 if user_query:
     st.session_state.messages.append({
@@ -186,29 +217,50 @@ if user_query:
                 print("GRAPH RESULT:")
                 print(result)
 
-                agent_result = result.get("agent_result", {})
+                agent_results = result.get("agent_results",[])
 
-                response = agent_result.get(
-                    "result",
-                    "No response was returned."
-                )
+                responses = []
 
-                st.markdown(response)
+                for agent_result in agent_results:
+                    agent_name = agent_result.get("agent","")
+                    response = agent_result.get("result","")
 
-                documents = result.get("documents", "")
+                    if response:
+                        responses.append({
+                           # "agent": agent_name,
+                            "result": response
+                        })
+
+                for response_data in responses:
+                    #agent_name = response_data["agent"]
+                    response = response_data["result"]
+
+                    #st.markdown(
+                     #   f"<div class='agent-title'>{agent_name.upper()}</div>",
+                    #    unsafe_allow_html=True
+                    #)
+
+                    st.markdown(
+                        f"<div class='agent-response'>{response}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                documents = result.get("documents",[])
 
                 if documents:
                     with st.expander("📚 Retrieved Documents"):
-                        st.markdown(documents)
+                        if isinstance(documents, list):
+                            st.markdown("\n\n".join(documents))
+                        else:
+                            st.markdown(documents)
 
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": response,
+                    "agent_results": responses,
                     "documents": documents
                 })
 
             except Exception as e:
-
                 response = f"❌ Error: {str(e)}"
 
                 st.error(response)

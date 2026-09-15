@@ -1,61 +1,61 @@
-import os
 from langchain_ollama import ChatOllama
 from langchain_core.messages import AIMessage
 from src.deep_agent_docent.state import DeepAgentState
-from src.ingestion_vector.ingestion import IngestionAgent
-from src.ingestion_vector.vectordb import FaissVectorStore
 
 class StarAgent:
-    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2",  llm_model: str ='llama3.1'):
-        self.vectorstore = FaissVectorStore(persist_dir, embedding_model)
-        faiss_path = os.path.join(persist_dir, "faiss.index")
-        meta_path = os.path.join(persist_dir, "metadata.pkl")
-        if not (os.path.exists(faiss_path) and os.path.exists(meta_path)):
-            ingest=IngestionAgent()
-            docs = ingest.load_all_docs("data")
-            self.vectorstore.build_from_documents(docs)
-        else:
-            self.vectorstore.load()
+    def __init__(self, llm_model: str = "llama3.1"):
         self.llm = ChatOllama(model=llm_model)
         print(f"Status Ollama LLM initialized: {self.llm}")
 
     def run(self, state: DeepAgentState) -> dict:
         query = state["user_query"]
-        results = self.vectorstore.query(query, top_k=5)
-        texts = [r["metadata"].get("text", "") for r in results if r["metadata"]]
-        context = "\n\n".join(texts)
-        if not context:
-            return "No relevant documents found."
+        documents = state["documents"]
+        if not documents:
+            answer = "No relevant document context is available."
+            return {
+                "agent_results": [{"agent": "star","result": answer}],
+                "messages": [AIMessage(content=answer)]
+            }
+        context = "\n\n".join(documents)
         prompt = f"""
-            You are an expert business analyst generating STAR-format insights (Situation, Task, Action, Result) from documents. 
-            Analyze the content deeply, identify key events or decisions, and convert them into STAR points.
-            Provide actionable outcomes and emphasize the dominant achievements or decisions reflected in the text.
+            You are an expert analyst generating STAR-format insights
+            (Situation, Task, Action, Result) from the provided documents.
 
-            Use the following FAISS-retrieved context to analyze the situation deeply, identify the key events/decisions, and convert them into clear STAR points.  
+            Analyze the content and identify relevant events, decisions,
+            activities, or outcomes that can be expressed in STAR format.
+
             Your goal:
-            - Extract the Situation  
-            - Identify the Task  
-            - Describe all Actions taken  
-            - Summarize the Result (impact, improvement, or decision made)  
-            - Return the final answer ONLY in STAR format.
-            Use only the details from the FAISS-retrieved context. Do not add assumptions.
-            Query: '{query}'
-            Context:
+            - Identify the Situation
+            - Identify the Task
+            - Describe the Actions taken
+            - Summarize the Result or outcome
+
+            Rules:
+            - Use only information from the provided document context.
+            - Do not add outside knowledge.
+            - Do not make assumptions.
+            - Do not invent achievements, outcomes, or statistics.
+            - If a STAR element is not supported by the documents,
+            do not invent it.
+            - Return the final answer only in STAR format.
+
+            User Query:
+            {query}
+
+            Document Context:
             {context}
 
             Provide the final answer strictly in STAR format.
-            """
+        """
         response = self.llm.invoke([prompt])
-        retrieved_documents = []
-        for i, text in enumerate(texts, start=1):
-            retrieved_documents.append(
-                f"### Chunk {i}\n\n{text}\n\n"
-            )
+        answer = (
+            response.content
+            if hasattr(response, "content")
+            else str(response)
+        )
         return {
-            "agent_result": {"agent": "qa","result": response.content},
-            "documents": retrieved_documents,
-            "messages": [AIMessage(content=response.content)]
+            "agent_results": [{"agent": "star","result": answer}],
+            "messages": [AIMessage(content=answer)]
         }
-
-        
+            
         
